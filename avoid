@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+import rospy
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Range
+
+class InfraredObstacleAvoider:
+    def __init__(self):
+        # 初始化节点
+        rospy.init_node('infrared_obstacle_avoider', anonymous=True)
+        
+        # 发布速度指令的话题
+        self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        
+        # 红外传感器距离阈值（单位：米）
+        self.obstacle_threshold = rospy.get_param('~obstacle_threshold', 0.3)
+        
+        # 存储传感器数据
+        self.left_distance = float('inf')
+        self.front_distance = float('inf')
+        self.right_distance = float('inf')
+        
+        # 订阅红外传感器数据
+        rospy.Subscriber('/infrared/left', Range, self.left_sensor_callback)
+        rospy.Subscriber('/infrared/front', Range, self.front_sensor_callback)
+        rospy.Subscriber('/infrared/right', Range, self.right_sensor_callback)
+        
+        # 设置循环频率
+        self.rate = rospy.Rate(10)  # 10Hz
+        
+        # 运动参数
+        self.linear_speed = 0.2    # 前进速度
+        self.angular_speed = 0.5   # 旋转速度
+        
+        rospy.loginfo("红外避障节点已启动")
+
+    def left_sensor_callback(self, msg):
+        """左侧红外传感器回调函数"""
+        self.left_distance = msg.range
+
+    def front_sensor_callback(self, msg):
+        """前方红外传感器回调函数"""
+        self.front_distance = msg.range
+
+    def right_sensor_callback(self, msg):
+        """右侧红外传感器回调函数"""
+        self.right_distance = msg.range
+
+    def avoid_obstacle(self):
+        """避障逻辑实现"""
+        twist = Twist()
+        
+        # 检查前方是否有障碍物
+        if self.front_distance < self.obstacle_threshold:
+            rospy.loginfo("前方检测到障碍物，距离: %.2f米", self.front_distance)
+            
+            # 停止前进
+            twist.linear.x = 0
+            
+            # 根据左右传感器选择转向方向
+            if self.left_distance > self.right_distance:
+                rospy.loginfo("向左转向")
+                twist.angular.z = self.angular_speed
+            else:
+                rospy.loginfo("向右转向")
+                twist.angular.z = -self.angular_speed
+        else:
+            # 前方无障碍物，正常前进
+            twist.linear.x = self.linear_speed
+            twist.angular.z = 0
+            
+            # 检查两侧是否有障碍物，轻微调整方向
+            if self.left_distance < self.obstacle_threshold * 1.2:
+                rospy.loginfo("左侧有障碍物，轻微右转")
+                twist.angular.z = -self.angular_speed * 0.5
+            elif self.right_distance < self.obstacle_threshold * 1.2:
+                rospy.loginfo("右侧有障碍物，轻微左转")
+                twist.angular.z = self.angular_speed * 0.5
+        
+        # 发布速度指令
+        self.cmd_vel_pub.publish(twist)
+
+    def run(self):
+        """运行避障节点"""
+        try:
+            while not rospy.is_shutdown():
+                self.avoid_obstacle()
+                self.rate.sleep()
+        except rospy.ROSInterruptException:
+            rospy.loginfo("避障节点已停止")
+        finally:
+            # 停止小车
+            twist = Twist()
+            self.cmd_vel_pub.publish(twist)
+
+if __name__ == '__main__':
+    try:
+        avoider = InfraredObstacleAvoider()
+        avoider.run()
+    except rospy.ROSInterruptException:
+        pass
