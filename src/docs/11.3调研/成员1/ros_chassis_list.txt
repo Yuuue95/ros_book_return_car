@@ -1,0 +1,9 @@
+turtlebot3_bringup /opt/ros/melodic/share/turtlebot3_bringup
+turtlebot3_description /opt/ros/melodic/share/turtlebot3_description
+turtlebot3_example /opt/ros/melodic/share/turtlebot3_example
+turtlebot3_fake /opt/ros/melodic/share/turtlebot3_fake
+turtlebot3_gazebo /opt/ros/melodic/share/turtlebot3_gazebo
+turtlebot3_msgs /opt/ros/melodic/share/turtlebot3_msgs
+turtlebot3_navigation /opt/ros/melodic/share/turtlebot3_navigation
+turtlebot3_slam /opt/ros/melodic/share/turtlebot3_slam
+turtlebot3_teleop /opt/ros/melodic/share/turtlebot3_teleop
