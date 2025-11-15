@@ -1,0 +1,12 @@
+<launch>
+    <!-- 启动红外避障节点 -->
+    <node name="infrared_obstacle_avoider" 
+          pkg="ros_ir_avoidance" 
+          type="infrared_avoider.py" 
+          output="screen">
+        <!-- 可在这里修改参数（覆盖代码默认值） -->
+        <param name="obstacle_threshold" value="0.3" />
+        <param name="linear_speed" value="0.2" />
+        <param name="angular_speed" value="0.5" />
+    </node>
+</launch>
